@@ -4,6 +4,11 @@ const GitRepository = require('./git-repository');
 
 const GIT_FILE_REGEX = RegExp('^gitdir: (.+)');
 
+function checkNoCheckGit(directory){
+    let noCheckGit=directory.getFile('.nocheckgit');
+    return noCheckGit.existsSync()
+}
+
 // Returns the .gitdir path in the agnostic Git symlink .git file given, or
 // null if the path is not a valid gitfile.
 //
@@ -41,6 +46,12 @@ function findGitDirectorySync(directory) {
   // TODO: Fix node-pathwatcher/src/directory.coffee so the following methods
   // can return cached values rather than always returning new objects:
   // getParent(), getFile(), getSubdirectory().
+  
+    if ( checkNoCheckGit(directory) ){
+        return null;
+    }
+  
+  
   let gitDir = directory.getSubdirectory('.git');
   if (typeof gitDir.getPath === 'function') {
     const gitDirPath = pathFromGitFileSync(gitDir.getPath());
@@ -71,6 +82,11 @@ async function findGitDirectory(directory) {
   // TODO: Fix node-pathwatcher/src/directory.coffee so the following methods
   // can return cached values rather than always returning new objects:
   // getParent(), getFile(), getSubdirectory().
+  
+    if ( checkNoCheckGit(directory) ){
+        return null;
+    }
+
   let gitDir = directory.getSubdirectory('.git');
   if (typeof gitDir.getPath === 'function') {
     const gitDirPath = await pathFromGitFile(gitDir.getPath());
@@ -81,7 +97,7 @@ async function findGitDirectory(directory) {
   if (
     typeof gitDir.exists === 'function' &&
     (await gitDir.exists()) &&
-    (await isValidGitDirectory(gitDir))
+    isValidGitDirectory(gitDir)
   ) {
     return gitDir;
   } else if (directory.isRoot()) {
